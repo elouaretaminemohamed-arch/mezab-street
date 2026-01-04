@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دليل شارع مزاب الرقمي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --main: #2c3e50; --gold: #d4af37; --white: #ffffff; }
+        body { font-family: 'Cairo', sans-serif; margin: 0; background: #f0f2f5; }
+        header { background: var(--main); color: white; padding: 20px; text-align: center; }
+        
+        .container { max-width: 1000px; margin: 20px auto; padding: 10px; }
+        
+        /* تصميم المحلات */
+        .shops-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+        .shop-card { background: white; padding: 20px; border-radius: 15px; text-align: center; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s; }
+        .shop-card:hover { transform: scale(1.05); border: 2px solid var(--gold); }
+        .shop-card i { font-size: 40px; display: block; margin-bottom: 10px; }
+
+        /* صفحة السلع */
+        #products-page { display: none; }
+        .back-btn { background: #666; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-bottom: 20px; }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .product-item { background: white; padding: 15px; border-radius: 10px; text-align: center; }
+        .product-item img { width: 100%; border-radius: 5px; height: 150px; object-fit: cover; }
+
+        /* السلة */
+        .cart-float { position: fixed; bottom: 0; width: 100%; background: white; padding: 15px; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); display: none; justify-content: space-around; align-items: center; border-radius: 20px 20px 0 0; }
+        .btn-send { background: #25d366; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🛍️ شارع مزاب للتسوق</h1>
+    <p id="sub-title">اختر محلاً لبدء التسوق</p>
+</header>
+
+<div class="container">
+    <div id="shops-page" class="shops-grid">
+        </div>
+
+    <div id="products-page">
+        <button class="back-btn" onclick="showShops()">⬅ العودة للمحلات</button>
+        <h2 id="current-shop-name">اسم المحل</h2>
+        <div id="products-list" class="products-grid"></div>
+    </div>
+</div>
+
+<div id="cart-float" class="cart-float">
+    <div>إجمالي السلة: <span id="cart-total">0</span> د.ج</div>
+    <a href="#" class="btn-send" onclick="sendToShopWhatsApp()">إرسال الطلب للمحل</a>
+</div>
+
+<script>
+    // بيانات المحلات (يمكنك تغيير الأرقام والأسماء)
+    const shops = [
+        { id: 1, name: "محل الأناقة", phone: "213777661460", icon: "👕" },
+        { id: 2, name: "إلكترونيات مزاب", phone: "213777661460", icon: "📱" },
+        { id: 3, name: "عطور الهدى", phone: "213777661460", icon: "✨" },
+        // ... أضف حتى 10 محلات بنفس الطريقة
+    ];
+
+    // بيانات المنتجات لكل محل
+    const allProducts = {
+        1: [ { name: "قميص", price: 3000, img: "https://via.placeholder.com/150" }, { name: "سروال", price: 4000, img: "https://via.placeholder.com/150" } ],
+        2: [ { name: "سماعات", price: 1500, img: "https://via.placeholder.com/150" }, { name: "شاحن", price: 2000, img: "https://via.placeholder.com/150" } ]
+    };
+
+    let currentShop = null;
+    let cart = [];
+
+    // عرض المحلات عند الفتح
+    function initShops() {
+        const grid = document.getElementById('shops-page');
+        shops.forEach(shop => {
+            grid.innerHTML += `
+                <div class="shop-card" onclick="openShop(${shop.id})">
+                    <i>${shop.icon}</i>
+                    <strong>${shop.name}</strong>
+                </div>
+            `;
+        });
+    }
+
+    function openShop(shopId) {
+        currentShop = shops.find(s => s.id === shopId);
+        cart = []; // تصفير السلة فور دخول محل جديد
+        updateUI();
+        
+        document.getElementById('shops-page').style.display = 'none';
+        document.getElementById('products-page').style.display = 'block';
+        document.getElementById('current-shop-name').innerText = currentShop.name;
+
+        const pList = document.getElementById('products-list');
+        pList.innerHTML = '';
+        (allProducts[shopId] || []).forEach(p => {
+            pList.innerHTML += `
+                <div class="product-item">
+                    <img src="${p.img}">
+                    <h4>${p.name}</h4>
+                    <p>${p.price} د.ج</p>
+                    <button onclick="addToCart('${p.name}', ${p.price})">أضف للسلة</button>
+                </div>
+            `;
+        });
+    }
+
+    function addToCart(name, price) {
+        cart.push({ name, price });
+        updateUI();
+    }
+
+    function updateUI() {
+        const total = cart.reduce((sum, item) => sum + item.price, 0);
+        document.getElementById('cart-total').innerText = total;
+        document.getElementById('cart-float').style.display = cart.length > 0 ? 'flex' : 'none';
+    }
+
+    function showShops() {
+        document.getElementById('shops-page').style.display = 'grid';
+        document.getElementById('products-page').style.display = 'none';
+        document.getElementById('cart-float').style.display = 'none';
+        cart = []; // تصفير السلة عند العودة
+    }
+
+    function sendToShopWhatsApp() {
+        let text = `طلب جديد من زبون لـ (${currentShop.name}):\n`;
+        cart.forEach(item => text += `- ${item.name} (${item.price}دج)\n`);
+        const total = cart.reduce((sum, item) => sum + item.price, 0);
+        text += `\nالمجموع الكلي: ${total} د.ج`;
+
+        window.location.href = `https://api.whatsapp.com/send?phone=${currentShop.phone}&text=${encodeURIComponent(text)}`;
+    }
+
+    initShops();
+</script>
+
+</body>
+</html>
